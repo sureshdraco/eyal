@@ -30,6 +30,8 @@ import user.com.profiling.network.response.UserProfiling;
 
 public class MainActivity extends ActionBarActivity {
 
+	private final static long THIRTY_DAYS_IN_MILLS = 2592000000l;
+
 	private String TAG = MainActivity.class.getSimpleName();
 	private String emailOffers = "{\n" +
 			"    \"Emails\": [\n" +
@@ -114,20 +116,26 @@ public class MainActivity extends ActionBarActivity {
 
 	private void getBrowserHistory() {
 		String[] projection = new String[] {
-				Browser.BookmarkColumns.TITLE
+				Browser.BookmarkColumns.DATE
 				, Browser.BookmarkColumns.URL
 		};
 		Cursor mCur = getContentResolver().query(android.provider.Browser.BOOKMARKS_URI,
-				projection, null, null, Browser.BookmarkColumns.DATE + " ASC"
+				projection, null, null, Browser.BookmarkColumns.DATE + " DESC"
 				);
 		mCur.moveToFirst();
 		int urlIdx = mCur.getColumnIndex(Browser.BookmarkColumns.URL);
 		int dateIdx = mCur.getColumnIndex(Browser.BookmarkColumns.DATE);
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+		long currentTimeInMills = new Date().getTime();
+		long thirtyDaysBefore = currentTimeInMills - THIRTY_DAYS_IN_MILLS;
 		while (!mCur.isAfterLast()) {
-			Log.d("browser", "Url: " + mCur.getString(urlIdx));
-			Log.d("browser", "Date: " + simpleDateFormat.format(new Date(mCur.getLong(dateIdx))));
-			mCur.moveToNext();
+			if (mCur.getLong(dateIdx) > thirtyDaysBefore) {
+				Log.d("browser", "Url: " + mCur.getString(urlIdx));
+				Log.d("browser", "Date: " + simpleDateFormat.format(new Date(mCur.getLong(dateIdx))));
+				mCur.moveToNext();
+			} else {
+				break;
+			}
 		}
 		mCur.close();
 	}
