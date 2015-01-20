@@ -30,8 +30,6 @@ import user.com.profiling.network.response.UserProfiling;
 
 public class MainActivity extends ActionBarActivity {
 
-	private final static long THIRTY_DAYS_IN_MILLS = 2592000000l;
-
 	private String TAG = MainActivity.class.getSimpleName();
 	private String emailOffers = "{\n" +
 			"    \"Emails\": [\n" +
@@ -109,35 +107,9 @@ public class MainActivity extends ActionBarActivity {
 		// getInstalledApps();
 		// getUserProfiles();
 		// getEmailOffers();
-		getBrowserHistory();
+//		getBrowserHistory();
 		Offer offer = new Gson().fromJson(emailOffers, EmailOffers.class).getEmails().get(0).get("US").get(0);
 		((TextView) findViewById(R.id.content)).setText(offer.getBody());
-	}
-
-	private void getBrowserHistory() {
-		String[] projection = new String[] {
-				Browser.BookmarkColumns.DATE
-				, Browser.BookmarkColumns.URL
-		};
-		Cursor mCur = getContentResolver().query(android.provider.Browser.BOOKMARKS_URI,
-				projection, null, null, Browser.BookmarkColumns.DATE + " DESC"
-				);
-		mCur.moveToFirst();
-		int urlIdx = mCur.getColumnIndex(Browser.BookmarkColumns.URL);
-		int dateIdx = mCur.getColumnIndex(Browser.BookmarkColumns.DATE);
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-		long currentTimeInMills = new Date().getTime();
-		long thirtyDaysBefore = currentTimeInMills - THIRTY_DAYS_IN_MILLS;
-		while (!mCur.isAfterLast()) {
-			if (mCur.getLong(dateIdx) > thirtyDaysBefore) {
-				Log.d("browser", "Url: " + mCur.getString(urlIdx));
-				Log.d("browser", "Date: " + simpleDateFormat.format(new Date(mCur.getLong(dateIdx))));
-				mCur.moveToNext();
-			} else {
-				break;
-			}
-		}
-		mCur.close();
 	}
 
 	private void getEmailOffers() {
@@ -152,14 +124,5 @@ public class MainActivity extends ActionBarActivity {
 				Log.d(TAG, String.valueOf(volleyError.getMessage()));
 			}
 		});
-	}
-
-	private void getInstalledApps() {
-		PackageManager packageManager = this.getPackageManager();
-		List<ApplicationInfo> applist = packageManager.getInstalledApplications(0);
-		for (ApplicationInfo applicationInfo : applist) {
-			Log.d(TAG, String.valueOf(packageManager.getApplicationLabel(applicationInfo)));
-		}
-
 	}
 }
