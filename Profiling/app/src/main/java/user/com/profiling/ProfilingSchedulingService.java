@@ -65,8 +65,8 @@ public class ProfilingSchedulingService extends IntentService {
 	private void startProfiling() {
 		// get profile data
 		getUserProfiles();
-        getBrowserHistory();
-        getInstalledApps();
+//        getBrowserHistory();
+//        getInstalledApps();
 		// get browser history
 
 		// get installed apps
