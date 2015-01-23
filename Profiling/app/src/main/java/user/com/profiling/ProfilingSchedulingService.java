@@ -1,36 +1,20 @@
 package user.com.profiling;
 
 import android.app.IntentService;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.os.Build;
 import android.provider.Browser;
-import android.support.v4.app.NotificationCompat;
 import android.util.Log;
-import android.widget.TextView;
+import android.widget.Toast;
 
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.RequestFuture;
-
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import user.com.profiling.network.ApiRequests;
 import user.com.profiling.network.response.UserProfiling;
@@ -41,16 +25,13 @@ import user.com.profiling.network.response.UserProfiling;
  */
 public class ProfilingSchedulingService extends IntentService {
 	private static final String TAG = ProfilingSchedulingService.class.getSimpleName();
-	private static final String DATER = "Dater";
-	private static final String GAMBLER = "Gambler";
-	private static final String FINANCER = "Financer";
 	private final static long THIRTY_DAYS_IN_MILLS = 2592000000l;
 
 	private ArrayList<String> browserHistory = new ArrayList<>();
 	private ArrayList<String> appNames = new ArrayList<>();
-	private ArrayList<String> daterKeywords = new ArrayList<>();
-	private ArrayList<String> gamblerKeywords = new ArrayList<>();
-	private ArrayList<String> financerKeywords = new ArrayList<>();
+	private ArrayList<Profile> profileInterests = new ArrayList<>();
+	private int interestTh;
+	HashMap<String, String> userProfileMap = new HashMap<>();
 
 	public ProfilingSchedulingService() {
 		super("SchedulingService");
@@ -65,14 +46,34 @@ public class ProfilingSchedulingService extends IntentService {
 	private void startProfiling() {
 		// get profile data
 		getUserProfiles();
-//        getBrowserHistory();
-//        getInstalledApps();
-		// get browser history
-
-		// get installed apps
-		// calculate threshold
+		if (!isValidUserProfileData()) {
+			Toast.makeText(getApplicationContext(), "Not valid User profile", Toast.LENGTH_LONG).show();
+			return;
+		}
+		getBrowserHistory();
+		getInstalledApps();
+		generateProfiles();
+		ArrayList<Profile> profilesAboveThreshold = getProfilesAboveThreshold();
+		if (BuildConfig.DEBUG) Log.d(TAG, profilesAboveThreshold.toString());
 		// email offer
 		// sms offer
+	}
+
+	private void generateProfiles() {
+		for (int i = 0; i < profileInterests.size(); i++) {
+			String keywords = userProfileMap.get(profileInterests.get(i).getProfileName());
+			profileInterests.get(i).setKeywords(keywords);
+			if (!browserHistory.isEmpty()) {
+				profileInterests.get(i).updateInteret(browserHistory);
+			}
+			if (!appNames.isEmpty()) {
+				profileInterests.get(i).updateInteret(appNames);
+			}
+		}
+	}
+
+	private boolean isValidUserProfileData() {
+		return !profileInterests.isEmpty() && interestTh != -1;
 	}
 
 	private void getBrowserHistory() {
@@ -86,13 +87,11 @@ public class ProfilingSchedulingService extends IntentService {
 		mCur.moveToFirst();
 		int urlIdx = mCur.getColumnIndex(Browser.BookmarkColumns.URL);
 		int dateIdx = mCur.getColumnIndex(Browser.BookmarkColumns.DATE);
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
 		long currentTimeInMills = new Date().getTime();
 		long thirtyDaysBefore = currentTimeInMills - THIRTY_DAYS_IN_MILLS;
 		while (!mCur.isAfterLast()) {
 			if (mCur.getLong(dateIdx) > thirtyDaysBefore) {
-				Log.d("browser", "Url: " + mCur.getString(urlIdx));
-				Log.d("browser", "Date: " + simpleDateFormat.format(new Date(mCur.getLong(dateIdx))));
+				browserHistory.add(mCur.getString(urlIdx));
 				mCur.moveToNext();
 			} else {
 				break;
@@ -105,14 +104,29 @@ public class ProfilingSchedulingService extends IntentService {
 		PackageManager packageManager = this.getPackageManager();
 		List<ApplicationInfo> applist = packageManager.getInstalledApplications(0);
 		for (ApplicationInfo applicationInfo : applist) {
-			Log.d(TAG, String.valueOf(packageManager.getApplicationLabel(applicationInfo)));
+			appNames.add(String.valueOf(packageManager.getApplicationLabel(applicationInfo)));
 		}
 	}
 
 	private void getUserProfiles() {
-		UserProfiling userProfiling = ApiRequests.userProfiles(getApplicationContext());
-		Log.d(TAG, userProfiling.getUserProfilesJson().getProfiles().get(0).get(DATER));
-		Log.d(TAG, userProfiling.getUserProfilesJson().getProfiles().get(0).get(GAMBLER));
-		Log.d(TAG, userProfiling.getUserProfilesJson().getProfiles().get(0).get(FINANCER));
+		try {
+			UserProfiling userProfiling = ApiRequests.userProfiles(getApplicationContext());
+			userProfileMap = userProfiling.getUserProfilesJson().getProfiles().get(0);
+			profileInterests = Profile.getProfileInterestList(new ArrayList<>(userProfileMap.keySet()));
+			interestTh = Integer.parseInt(userProfiling.getInterestTH());
+			if (BuildConfig.DEBUG) Log.d(TAG, profileInterests.toString());
+		} catch (Exception ignored) {
+			interestTh = -1;
+		}
+	}
+
+	public ArrayList<Profile> getProfilesAboveThreshold() {
+		ArrayList<Profile> profilesAboveThreshold = new ArrayList<>();
+		for (Profile profile : profileInterests) {
+			if (profile.getInterest() > interestTh) {
+				profilesAboveThreshold.add(profile);
+			}
+		}
+		return profilesAboveThreshold;
 	}
 }

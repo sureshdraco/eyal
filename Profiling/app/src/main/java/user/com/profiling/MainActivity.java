@@ -104,10 +104,6 @@ public class MainActivity extends ActionBarActivity {
 		Intent service = new Intent(getApplicationContext(), ProfilingSchedulingService.class);
 		startService(service);
 
-		// getInstalledApps();
-		// getUserProfiles();
-		// getEmailOffers();
-//		getBrowserHistory();
 		Offer offer = new Gson().fromJson(emailOffers, EmailOffers.class).getEmails().get(0).get("US").get(0);
 		((TextView) findViewById(R.id.content)).setText(offer.getBody());
 	}

@@ -1,0 +1,7 @@
+{"UserProfilesJson": 
+	{"Profiles":[
+		{"Dater":"date, tinder, dating, love, cupid",
+		"Gambler":"poker, slot, texas, card, roullete","Financer":"finance, insurance, money"}
+	]},
+	"InterestTH":"3"
+}
