@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="#F6F6F6"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <TextView
+        android:textColor="#ff0000"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_margin="20dp"
+        android:textSize="25sp"
+        android:text="Confirm you are +18" />
+
+    <Button
+        android:id="@+id/confirm"
+        android:text="Confirm"
+        android:textSize="20sp"
+        android:textColor="@android:color/white"
+        android:background="@drawable/action_button_selector_green"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_marginBottom="5dp"
+        android:layout_width="fill_parent"
+        android:layout_height="60dp" />
+
+    <Button
+        android:id="@+id/confirmLater"
+        android:text="Confirm Later"
+        android:textSize="14sp"
+        android:textColor="@android:color/darker_gray"
+        android:background="#F6F6F6"
+        android:layout_marginLeft="50dp"
+        android:layout_marginRight="50dp"
+        android:layout_marginBottom="5dp"
+        android:layout_width="fill_parent"
+        android:layout_height="35dp" />
+
+    <RelativeLayout
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+
+        <CheckBox
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/confirmCheckBox" />
+
+        <TextView
+            android:layout_alignParentTop="true"
+            android:layout_marginTop="6dp"
+            android:layout_toRightOf="@+id/confirmCheckBox"
+            android:layout_marginLeft="4dp"
+            android:id="@+id/confirmText"
+            android:textStyle="italic"
+            android:textSize="12sp"
+            android:text="I confirm that i'm over 18 years old and agree that the host and marketing of this app may introduce me fun offers by mail or contact me via phone or text. I confirm that I provide genuine declaration regarding my age."
+            android:textColor="#a2a2a2"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content" />
+    </RelativeLayout>
+
+
+</LinearLayout>
