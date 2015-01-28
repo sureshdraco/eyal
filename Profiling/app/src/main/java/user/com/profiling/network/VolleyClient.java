@@ -22,7 +22,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import java.io.File;
 
 public class VolleyClient {
-	private static final int NETWORK_THREAD_POOL_SIZE = 1;
+	private static final int NETWORK_THREAD_POOL_SIZE = 5;
 	private static VolleyClient mInstance;
 	private RequestQueue mRequestQueue;
 	private static Context mCtx;

