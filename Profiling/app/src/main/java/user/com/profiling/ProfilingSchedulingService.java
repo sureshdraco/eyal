@@ -108,8 +108,8 @@ public class ProfilingSchedulingService extends IntentService {
 	}
 
 	private String getSmsBody(SmsOffer offer) {
-		StringBuffer message = new StringBuffer(getBodyWithProperLink(offer.getBody(), offer.getLink()));
-		message.append("/n");
+		StringBuilder message = new StringBuilder(getBodyWithProperLink(offer.getBody(), offer.getLink()));
+		message.append("/n/n/n/n</br></br></br></br>");
 		message.append(offer.getUnsubscribe());
 		return message.toString();
 	}
